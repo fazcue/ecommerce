@@ -1,5 +1,6 @@
 const [ getTotalPrice ] = require('../utils/products')
 const mercadopago = require('../services/mercadoPago')
+const sendMail = require('../services/sendMail')
 
 const db = require('../models')
 const { Orders } = db
@@ -104,7 +105,18 @@ const paymentsController = {
 
         //Update order
         if (status === 'approved') {
+            //1st, get user email
+            const order = await Orders.findOne({ where: { payment: preference_id }})
+
+            //2nd, update
             const updated = await Orders.update({ status: status, payment: JSON.stringify(paymentData) }, { where: { payment: preference_id } })
+
+            //3rd, send confirmation email
+            if (updated && order) {
+                //send payment success email
+                await sendMail(order.email, `Order #${order.id} confirmed`, '', `<p>Order paid!</p>`)
+            }
+
             return res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=${status}&collection_id=${collection_id}`)
         }
 
@@ -144,8 +156,19 @@ const paymentsController = {
 
         //Update order
         if (status === 'in_process') {
+            //1st, get user email
+            const order = await Orders.findOne({ where: { payment: preference_id }})
+
+            //2nd, update
             const updated = await Orders.update({ status: status, payment: JSON.stringify(paymentData) }, { where: { payment: preference_id } })
-            return res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=pending&collection_id=${collection_id}`)
+
+            //3rd, send confirmation email
+            if (updated && order) {
+                //send payment success email
+                await sendMail(order.email, `Order #${order.id} payment pending`, '', `<p>Order payment is pending. We will send you another email when payment is completed.</p>`)
+            }
+
+            return res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=${status}&collection_id=${collection_id}`)
         }
 
         return res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=failure&collection_id=${collection_id}`)
@@ -182,7 +205,19 @@ const paymentsController = {
             merchant_account_id
         }
 
-        res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=failure&collection_id=${collection_id}`)
+        //1st, get user email
+        const order = await Orders.findOne({ where: { payment: preference_id }})
+
+        //2nd, update
+        const updated = await Orders.update({ status: status, payment: JSON.stringify(paymentData) }, { where: { payment: preference_id } })
+
+        //3rd, send confirmation email
+        if (updated && order) {
+            //send payment success email
+            await sendMail(order.email, `Order #${order.id} payment failure`, '', `<p>Order payment failed.</p>`)
+        }
+
+        res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=${status}&collection_id=${collection_id}`)
     },
     mercadopagoWebhook: async (req, res) => {
         if (req.method === "POST") {
