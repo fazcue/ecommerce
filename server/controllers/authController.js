@@ -8,6 +8,7 @@ const sendMail = require('../services/sendMail')
 const { Users } = db
 
 const JWT_SECRET = process.env.JWT_SECRET
+const CLIENT_URL = process.env.CLIENT_URL
 
 const authController = {
     register: async (req, res) => {
@@ -19,15 +20,12 @@ const authController = {
         }
 
         const { firstName, lastName, email, password } = req.body
-
-        console.log('Registering...', firstName, lastName, email);
-
         const salt = bcrypt.genSaltSync(11)
 
         //Create user
         try {
             const [user, created] = await Users.findOrCreate({
-                where: { email: email },
+                where: { email },
                 defaults: {
                   firstName: firstName,
                   lastName: lastName,
@@ -37,17 +35,14 @@ const authController = {
                 }
             })
 
-            console.log('user', user, created);
-
             //return token if created
             if (created) {
                 const token = signToken(user)
                 return res.status(200).json({token})
             } else {
-                return res.status(200).send('Usuario ya registrado')
+                return res.status(200).send('User already registered')
             }
         } catch (error) {
-            console.log('Problem register', error);
             return res.status(400).json(error)
         }
     },
@@ -59,20 +54,22 @@ const authController = {
             return res.status(400).json({errors: errors.array()})
         }
 
+        const { email, password } = req.body
+
         //Return token
         try {
-            const user = await Users.findOne({ where: { email: req.body.email }})
+            const user = await Users.findOne({ where: { email }})
 
-            if (bcrypt.compareSync(req.body.password, user.password)) {
+            if (bcrypt.compareSync(password, user.password)) {
                 const userData = {...user.dataValues}
                 delete userData.password
                 const token = signToken(userData)
                 return res.status(200).json({token})
             } else {
-                return res.status(400).send('Datos inválidos')
+                return res.status(400).send('Invalid data')
             }
         } catch (error) {
-            return res.status(400).send('Usuario inexistente')
+            return res.status(400).send('User does not exist')
         }
     },
     recover: async (req, res) => {
@@ -83,9 +80,10 @@ const authController = {
             return res.status(400).json({errors: errors.array()})
         }
 
+        const { email } = req.body
+
         //Return recover token
         try {
-            const { email } = req.body
             const user = await Users.findOne({ where: { email }})
 
             if (user) {
@@ -97,7 +95,7 @@ const authController = {
 
                 if (updated) {
                     try {
-                        const result = await sendMail(email, 'prueba nodemailer', 'este mensaje es de prueba', `<p>enlace: ${recoverToken}</p>`)
+                        const result = await sendMail(email, 'Nodemailer test', 'Test message', `<p>If you want to recover your password, please follow this link: ${CLIENT_URL}/recover?token=${recoverToken}</p>`)
                         return res.status(200).send(result)
                     } catch (error) {
                         return res.status(401).send(error)
@@ -107,13 +105,13 @@ const authController = {
                 }
             }
         } catch (error) {
-            return res.status(400).send('Usuario inexistente')
+            return res.status(400).send('User does not exist')
         }
     },
     recoverToken: async (req, res) => {
-        try {
-            const { recoverToken } = req.body
+        const { recoverToken } = req.body
 
+        try {
             const user = await Users.findOne({ where: { recoverToken }})
 
             //compare dates
@@ -132,10 +130,10 @@ const authController = {
         }
     },
     recoverPassword: async (req, res) => {
-        try {
-            const { recoverToken, newPassword } = req.body
-            const salt = bcrypt.genSaltSync(11)
+        const { recoverToken, newPassword } = req.body
+        const salt = bcrypt.genSaltSync(11)
 
+        try {
             //1st: get user
             const user = await Users.findOne({ where: { recoverToken }})
 
@@ -150,7 +148,7 @@ const authController = {
 
             if (updated) {
                 try {
-                    const result = await sendMail(user.email, 'Contraseña actualizada', 'contraseña actualizada', `<p>Ya puedes utilizar tu nueva contraseña :)</p>`)
+                    const result = await sendMail(user.email, 'Password updated', 'Password updated', `<p>You can now login with your new password.</p>`)
                     return res.status(200).send(result)
                 } catch (error) {
                     return res.status(401).send(error)
@@ -159,7 +157,6 @@ const authController = {
                 return res.status(401).send({error: 'Password not reset'})
             }
         } catch (error) {
-            console.log('error', error);
             return res.status(401).send(error)
         }
     },

@@ -72,8 +72,9 @@ const paymentsController = {
 
         return res.status(503).json({error: 'Can`t get MP ID'})
     },
-    mercadopagosuccess: async (req, res) => {
+    mercadopagoSuccess: async (req, res) => {
         const { id } = req.params
+
         //Data received from MercadoPago after payment
         const {
             collection_id,
@@ -111,8 +112,9 @@ const paymentsController = {
 
         return res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=failure&collection_id=${collection_id}`)
     },
-    mercadopagopending: async (req, res) => {
+    mercadopagoPending: async (req, res) => {
         const { id } = req.params
+
         //Data received from MercadoPago after payment
         const {
             collection_id,
@@ -150,8 +152,9 @@ const paymentsController = {
 
         return res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=failure&collection_id=${collection_id}`)
     },
-    mercadopagofailure: async (req, res) => {
+    mercadopagoFailure: async (req, res) => {
         const { id } = req.params
+        
         //Data received from MercadoPago after payment
         const {
             collection_id,
@@ -183,7 +186,7 @@ const paymentsController = {
 
         res.redirect(`${CLIENT_URL}/dashboard?id=${id}&status=failure&collection_id=${collection_id}`)
     },
-    mercadopagowebhook: async (req, res) => {
+    mercadopagoWebhook: async (req, res) => {
         if (req.method === "POST") {
             let body = ""
             req.on("data", chunk => {

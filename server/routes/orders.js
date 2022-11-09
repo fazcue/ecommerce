@@ -1,13 +1,12 @@
 const express = require('express')
 const router = express.Router()
 
+const ordersController = require('../controllers/ordersController')
+
 const isUser = require('../middlewares/isUser')
 
-const ordersController = require('../controllers/ordersController')
-// const ordersValidator = require('../middlewares/ordersValidator')
-
-router.get('/', isUser, ordersController.getAll)
-router.post('/', isUser, ordersController.new)
+router.get('/', isUser, ordersController.get)
+router.post('/', isUser, ordersController.create)
 router.delete('/:id', isUser, ordersController.delete)
 
 module.exports = router
