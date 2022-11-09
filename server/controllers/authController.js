@@ -38,6 +38,10 @@ const authController = {
             //return token if created
             if (created) {
                 const token = signToken(user)
+
+                //send welcome message
+                await sendMail(user.email, 'Welcome!', '', `<p>This is a welcome email message.</p>`)
+
                 return res.status(200).json({token})
             } else {
                 return res.status(200).send('User already registered')
@@ -95,7 +99,7 @@ const authController = {
 
                 if (updated) {
                     try {
-                        const result = await sendMail(email, 'Nodemailer test', 'Test message', `<p>If you want to recover your password, please follow this link: ${CLIENT_URL}/recover?token=${recoverToken}</p>`)
+                        const result = await sendMail(email, 'Reset your password', '', `<p>If you want to reset your password, please follow this link: ${CLIENT_URL}/recover?token=${recoverToken}</p>`)
                         return res.status(200).send(result)
                     } catch (error) {
                         return res.status(401).send(error)
@@ -148,7 +152,7 @@ const authController = {
 
             if (updated) {
                 try {
-                    const result = await sendMail(user.email, 'Password updated', 'Password updated', `<p>You can now login with your new password.</p>`)
+                    const result = await sendMail(user.email, 'Password updated', '', `<p>You can now login with your new password.</p>`)
                     return res.status(200).send(result)
                 } catch (error) {
                     return res.status(401).send(error)
