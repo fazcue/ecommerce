@@ -50,10 +50,8 @@ const paymentsController = {
                 auto_return: "approved",
             }
 
-            await mercadopago.preferences.create(preference)
-            .then(response => {
-                mp_id = response.body.id
-            })
+            const response = await mercadopago.preferences.create(preference)
+            mp_id = response.body.id
         }
 
         if (mp_id) {
